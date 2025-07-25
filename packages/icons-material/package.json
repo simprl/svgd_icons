@@ -1,0 +1,23 @@
+{
+  "name": "@svgd/icons-material",
+  "version": "0.0.0",
+  "description": "Material UI icons in SVGD format",
+  "main": "icons/paths.js",
+  "types": "icons/paths.d.ts",
+  "files": ["icons"],
+  "scripts": {
+    "gen-svg": "node src/generate-icons.js",
+    "gen-pathes": "svgd --input ./svg --output ./icons/paths.js --format material --dts"
+  },
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
+    "@svgd/cli": "^1.0.33",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
+}
