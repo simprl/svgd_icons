@@ -7,7 +7,7 @@
   "files": ["icons"],
   "scripts": {
     "gen-svg": "node src/generate-icons.js",
-    "gen-pathes": "svgd --input ./svg --output ./icons/paths.js --format material --dts"
+    "gen-pathes": "svgd --input ./svg --output ./icons/paths.js --format material --dts --html ../../html/icons-material.html"
   },
   "license": "MIT",
   "type": "module",
