@@ -1,10 +1,12 @@
 {
   "name": "@svgd/icons-ant",
-  "version": "0.0.0",
+  "version": "6.0.0",
   "description": "Ant Design icons in SVGD format",
   "main": "icons/paths.js",
   "types": "icons/paths.d.ts",
-  "files": ["icons"],
+  "files": [
+    "icons"
+  ],
   "scripts": {
     "gen-svg": "node src/generate-icons.js",
     "gen-pathes": "svgd --input ./svg --output ./icons/paths.js --dts --html ../../html/icons-ant.html"
