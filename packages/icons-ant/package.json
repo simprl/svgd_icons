@@ -1,0 +1,20 @@
+{
+  "name": "@svgd/icons-ant",
+  "version": "0.0.0",
+  "description": "Ant Design icons in SVGD format",
+  "main": "icons/paths.js",
+  "types": "icons/paths.d.ts",
+  "files": ["icons"],
+  "scripts": {
+    "gen-svg": "node src/generate-icons.js",
+    "gen-pathes": "svgd --input ./svg --output ./icons/paths.js --dts"
+  },
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@ant-design/icons": "^6.0.0",
+    "@svgd/cli": "^1.0.33",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
+}
