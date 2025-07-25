@@ -69,7 +69,8 @@ jobs:
             pkg.version = `${pMaj}.${pMin}.${nextPatch}`;
           }
           fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-NODE
+          NODE
+
         env:
           PKG_PATH: packages/${{ matrix.pkg.name }}/package.json
           DEP_NAME: ${{ matrix.pkg.dep }}
