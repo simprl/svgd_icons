@@ -1,0 +1,83 @@
+name: Update Icon Packages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pkg:
+          - name: icons-material
+            dep: '@mui/icons-material'
+            install: npm install @mui/material@latest @mui/icons-material@latest
+          - name: icons-ant
+            dep: '@ant-design/icons'
+            install: npm install @ant-design/icons@latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update icon package to latest
+        run: ${{ matrix.pkg.install }}
+        working-directory: packages/${{ matrix.pkg.name }}
+
+      - name: Generate SVG sources
+        run: npm run gen-svg
+        working-directory: packages/${{ matrix.pkg.name }}
+
+      - name: Generate icon paths
+        run: npm run gen-pathes
+        working-directory: packages/${{ matrix.pkg.name }}
+
+      - name: Sync version from library dependency
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const pkgPath = process.env.PKG_PATH;
+          const depName = process.env.DEP_NAME;
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          const depRange = (pkg.dependencies && pkg.dependencies[depName]) ||
+                           (pkg.devDependencies && pkg.devDependencies[depName]);
+          if (!depRange) {
+            console.error('Cannot find ' + depName + ' in dependencies');
+            process.exit(1);
+          }
+          const depVersion = depRange.replace(/^[^\d]*/, '');
+          const [pMaj, pMin, pPatch] = pkg.version.split('.').map(Number);
+          const [dMaj, dMin, dPatch] = depVersion.split('.').map(Number);
+          if (dMaj * 10000 + dMin > pMaj * 10000 + pMin) {
+            pkg.version = `${dMaj}.${dMin}.${dPatch}`;
+          } else {
+            const nextPatch = dMaj === pMaj && dMin === pMin
+              ? Math.max(dPatch, pPatch) + 1
+              : Math.max(dPatch, pPatch);
+            pkg.version = `${pMaj}.${pMin}.${nextPatch}`;
+          }
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+NODE
+        env:
+          PKG_PATH: packages/${{ matrix.pkg.name }}/package.json
+          DEP_NAME: ${{ matrix.pkg.dep }}
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add packages/${{ matrix.pkg.name }}/icons html/${{ matrix.pkg.name }}.html html/index.html packages/${{ matrix.pkg.name }}/package.json
+          git commit -m "chore: update generated icons (${{ matrix.pkg.name }})" || echo "No changes to commit"
+          git push
