@@ -1,6 +1,6 @@
 {
   "name": "@svgd/icons-ant",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "description": "Ant Design icons in SVGD format",
   "main": "icons/paths.js",
   "types": "icons/paths.d.ts",
