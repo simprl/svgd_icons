@@ -2,12 +2,23 @@ name: Update Icon Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      package:
+        description: 'Which package to update?'
+        required: true
+        type: choice
+        options:
+          - icons-material
+          - icons-ant
+          - all
+        default: icons-material
 
 permissions:
   contents: write
 
 jobs:
   update:
+    if: ${{ github.event.inputs.package == 'all' || github.event.inputs.package == matrix.pkg.name }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
