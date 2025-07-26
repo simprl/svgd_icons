@@ -18,7 +18,6 @@ permissions:
 
 jobs:
   update:
-    if: ${{ github.event.inputs.package == 'all' || github.event.inputs.package == matrix.pkg.name }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,7 +28,15 @@ jobs:
           - name: icons-ant
             dep: '@ant-design/icons'
             install: npm install @ant-design/icons@latest
+
     steps:
+      - name: Skip unmatched matrix items
+        # если выбрано не "all" и имя пакета не совпадает — выходим с кодом 0
+        if: ${{ github.event.inputs.package != 'all' && github.event.inputs.package != matrix.pkg.name }}
+        run: |
+          echo "=> Skipping ${{ matrix.pkg.name }} (input package: ${{ github.event.inputs.package }})"
+          exit 0
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -81,7 +88,6 @@ jobs:
           }
           fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
           NODE
-
         env:
           PKG_PATH: packages/${{ matrix.pkg.name }}/package.json
           DEP_NAME: ${{ matrix.pkg.dep }}
