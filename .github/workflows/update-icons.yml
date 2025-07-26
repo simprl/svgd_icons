@@ -25,18 +25,11 @@ jobs:
       - id: set-matrix
         run: |
           if [[ "${{ github.event.inputs.package }}" == "all" ]]; then
-            echo "::set-output name=matrix::{\"pkg\":[
-              {\"name\":\"icons-material\",\"dep\":\"@mui/icons-material\",\"install\":\"npm install @mui/material@latest @mui/icons-material@latest\"},
-              {\"name\":\"icons-ant\",\"dep\":\"@ant-design/icons\",\"install\":\"npm install @ant-design/icons@latest\"}
-            ]}"
+            echo "matrix=[{\"name\":\"icons-material\",\"dep\":\"@mui/icons-material\",\"install\":\"npm install @mui/material@latest @mui/icons-material@latest\"},{\"name\":\"icons-ant\",\"dep\":\"@ant-design/icons\",\"install\":\"npm install @ant-design/icons@latest\"}]" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event.inputs.package }}" == "icons-material" ]]; then
-            echo "::set-output name=matrix::{\"pkg\":[
-              {\"name\":\"icons-material\",\"dep\":\"@mui/icons-material\",\"install\":\"npm install @mui/material@latest @mui/icons-material@latest\"}
-            ]}"
+            echo "matrix=[{\"name\":\"icons-material\",\"dep\":\"@mui/icons-material\",\"install\":\"npm install @mui/material@latest @mui/icons-material@latest\"}]" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=matrix::{\"pkg\":[
-              {\"name\":\"icons-ant\",\"dep\":\"@ant-design/icons\",\"install\":\"npm install @ant-design/icons@latest\"}
-            ]}"
+            echo "matrix=[{\"name\":\"icons-ant\",\"dep\":\"@ant-design/icons\",\"install\":\"npm install @ant-design/icons@latest\"}]" >> $GITHUB_OUTPUT
           fi
 
   update:
@@ -78,7 +71,28 @@ jobs:
         run: |
           cd packages/${{ matrix.name }}
           node - <<'NODE'
-            // ваш скрипт синхронизации версии тут
+          const fs = require('fs');
+          const pkgPath = 'package.json';
+          const depName = process.env.DEP_NAME;
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          const depRange = (pkg.dependencies && pkg.dependencies[depName]) ||
+                           (pkg.devDependencies && pkg.devDependencies[depName]);
+          if (!depRange) {
+            console.error('Cannot find ' + depName + ' in dependencies');
+            process.exit(1);
+          }
+          const depVersion = depRange.replace(/^[^\d]*/, '');
+          const [pMaj, pMin, pPatch] = pkg.version.split('.').map(Number);
+          const [dMaj, dMin, dPatch] = depVersion.split('.').map(Number);
+          if (dMaj * 10000 + dMin > pMaj * 10000 + pMin) {
+            pkg.version = `${dMaj}.${dMin}.${dPatch}`;
+          } else {
+            const nextPatch = dMaj === pMaj && dMin === pMin
+              ? Math.max(dPatch, pPatch) + 1
+              : Math.max(dPatch, pPatch);
+            pkg.version = `${pMaj}.${pMin}.${nextPatch}`;
+          }
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
           NODE
         env:
           DEP_NAME: ${{ matrix.dep }}
@@ -87,6 +101,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add packages/${{ matrix.name }}/package.json
+          git add packages/${{ matrix.name }}/icons html/${{ matrix.name }}.html html/index.html packages/${{ matrix.name }}/package.json
           git commit -m "chore: update generated icons (${{ matrix.name }})" || echo "No changes to commit"
           git push
