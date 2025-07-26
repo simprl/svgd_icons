@@ -17,7 +17,6 @@ permissions:
   contents: write
 
 jobs:
-  # 1) Подготовка JSON-матрицы
   prepare-matrix:
     runs-on: ubuntu-latest
     outputs:
@@ -40,12 +39,11 @@ jobs:
             ]}"
           fi
 
-  # 2) Сам update-job c динамической матрицей
   update:
     needs: prepare-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix).pkg }}
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout repository
