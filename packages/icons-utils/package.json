@@ -1,0 +1,34 @@
+{
+  "name": "@svgd/icons-utils",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./cli-sync-version": {
+      "import": "./dist/cli-sync-version.mjs",
+      "require": "./dist/cli-sync-version.cjs"
+    }
+  },
+  "bin": {
+    "sync-version": "./dist/cli-sync-version.cjs"
+  },
+  "scripts": {
+    "update-deps": "",
+    "gen-svg": "",
+    "gen-pathes": "",
+    "sync-version": "",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.6"
+  }
+}

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'Which package to update?'
+        description: 'Which package(s) to update?'
         required: true
         type: choice
         options:
@@ -17,30 +17,13 @@ permissions:
   contents: write
 
 jobs:
-  prepare-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - id: set-matrix
-        run: |
-          if [[ "${{ github.event.inputs.package }}" == "all" ]]; then
-            echo "matrix=[{\"name\":\"icons-material\",\"dep\":\"@mui/icons-material\",\"install\":\"npm install @mui/material@latest @mui/icons-material@latest\"},{\"name\":\"icons-ant\",\"dep\":\"@ant-design/icons\",\"install\":\"npm install @ant-design/icons@latest\"}]" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event.inputs.package }}" == "icons-material" ]]; then
-            echo "matrix=[{\"name\":\"icons-material\",\"dep\":\"@mui/icons-material\",\"install\":\"npm install @mui/material@latest @mui/icons-material@latest\"}]" >> $GITHUB_OUTPUT
-          else
-            echo "matrix=[{\"name\":\"icons-ant\",\"dep\":\"@ant-design/icons\",\"install\":\"npm install @ant-design/icons@latest\"}]" >> $GITHUB_OUTPUT
-          fi
-
   update:
-    needs: prepare-matrix
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        pkg: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    env:
+      PACKAGE: ${{ github.event.inputs.package }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -50,58 +33,50 @@ jobs:
         with:
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Update ${{ matrix.name }} to latest
+      - name: Update dependencies
         run: |
-          cd packages/${{ matrix.name }}
-          ${{ matrix.install }}
+          if [ "$PACKAGE" = "all" ]; then
+            npm run update-deps --workspaces
+          else
+            npm run update-deps --workspace=packages/"$PACKAGE"
+          fi
+
+      - name: Build
+        run: |
+          if [ "$PACKAGE" = "all" ]; then
+            npm run build --workspaces
+          else
+            npm run build --workspace=packages/"$PACKAGE"
+          fi
 
       - name: Generate SVG sources
         run: |
-          cd packages/${{ matrix.name }}
-          npm run gen-svg
+          if [ "$PACKAGE" = "all" ]; then
+            npm run gen-svg --workspaces
+          else
+            npm run gen-svg --workspace=packages/"$PACKAGE"
+          fi
 
       - name: Generate icon paths
         run: |
-          cd packages/${{ matrix.name }}
-          npm run gen-pathes
+          if [ "$PACKAGE" = "all" ]; then
+            npm run gen-pathes --workspaces
+          else
+            npm run gen-pathes --workspace=packages/"$PACKAGE"
+          fi
 
-      - name: Sync version from library dependency
+      - name: Sync versions
         run: |
-          cd packages/${{ matrix.name }}
-          node - <<'NODE'
-          const fs = require('fs');
-          const pkgPath = 'package.json';
-          const depName = process.env.DEP_NAME;
-          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-          const depRange = (pkg.dependencies && pkg.dependencies[depName]) ||
-                           (pkg.devDependencies && pkg.devDependencies[depName]);
-          if (!depRange) {
-            console.error('Cannot find ' + depName + ' in dependencies');
-            process.exit(1);
-          }
-          const depVersion = depRange.replace(/^[^\d]*/, '');
-          const [pMaj, pMin, pPatch] = pkg.version.split('.').map(Number);
-          const [dMaj, dMin, dPatch] = depVersion.split('.').map(Number);
-          if (dMaj * 10000 + dMin > pMaj * 10000 + pMin) {
-            pkg.version = `${dMaj}.${dMin}.${dPatch}`;
-          } else {
-            const nextPatch = dMaj === pMaj && dMin === pMin
-              ? Math.max(dPatch, pPatch) + 1
-              : Math.max(dPatch, pPatch);
-            pkg.version = `${pMaj}.${pMin}.${nextPatch}`;
-          }
-          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-          NODE
-        env:
-          DEP_NAME: ${{ matrix.dep }}
+          if [ "$PACKAGE" = "all" ]; then
+            npm run sync-version --workspaces
+          else
+            npm run sync-version --workspace=packages/"$PACKAGE"
+          fi
 
-      - name: Commit changes
+      - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add packages/${{ matrix.name }}/icons html/${{ matrix.name }}.html html/index.html packages/${{ matrix.name }}/package.json
-          git commit -m "chore: update generated icons (${{ matrix.name }})" || echo "No changes to commit"
+          git add *
+          git commit -m "chore: update generated icons ($PACKAGE)" || echo "No changes"
           git push
