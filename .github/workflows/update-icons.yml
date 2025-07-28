@@ -46,6 +46,7 @@ jobs:
           if [ "$PACKAGE" = "all" ]; then
             npm run build --workspaces
           else
+            npm run build --workspace=packages/icons-utils
             npm run build --workspace=packages/"$PACKAGE"
           fi
 
