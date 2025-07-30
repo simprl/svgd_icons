@@ -33,22 +33,26 @@ jobs:
         with:
           cache: 'npm'
 
+      - name: Build utils
+        run: |
+          npm i --workspace=packages/icons-utils
+          npm run build --workspace=packages/icons-utils
+
       - name: Update dependencies
         run: |
           if [ "$PACKAGE" = "all" ]; then
-            npm i
             npm run update-deps --workspaces
           else
-            npm i
             npm run update-deps --workspace=packages/"$PACKAGE"
           fi
 
-      - name: Build
+      - name: Install and Build
         run: |
           if [ "$PACKAGE" = "all" ]; then
+            npm i --workspaces
             npm run build --workspaces
           else
-            npm run build --workspace=packages/icons-utils
+            npm i --workspace=packages/"$PACKAGE"
             npm run build --workspace=packages/"$PACKAGE"
           fi
 
