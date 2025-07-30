@@ -1,6 +1,6 @@
 {
   "name": "@svgd/icons-material",
-  "version": "7.2.2",
+  "version": "7.2.3",
   "description": "Material UI icons in SVGD format",
   "main": "icons/paths.js",
   "types": "icons/paths.d.ts",
