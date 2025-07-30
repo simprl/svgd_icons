@@ -10,7 +10,7 @@
   "scripts": {
     "update-deps": "npm install @ant-design/icons@latest",
     "build": "vite build",
-    "gen-svg": "node scripts/generate-icons.js",
+    "gen-svg": "node dist/generate-icons.cjs",
     "gen-pathes": "svgd --colors --input ./svg --output ./icons/paths.js --format material --dts --html ../../html/icons-ant.html",
     "sync-version": "sync-version @ant-design/icons"
   },
